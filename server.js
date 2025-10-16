@@ -15,7 +15,22 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// API de téléchargement améliorée
+// Headers réalistes pour contourner les protections
+const REALISTIC_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'DNT': '1',
+    'Connection': 'keep-alive',
+    'Upgrade-Insecure-Requests': '1',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Cache-Control': 'max-age=0'
+};
+
+// API de téléchargement avec multiples méthodes
 app.post('/api/download', async (req, res) => {
     try {
         const { url } = req.body;
@@ -24,14 +39,14 @@ app.post('/api/download', async (req, res) => {
             return res.json({ success: false, error: 'URL est requise' });
         }
 
-        console.log('🔗 URL reçue:', url);
+        console.log('🔗 Tentative de téléchargement:', url);
 
         let result;
 
         if (url.includes('tiktok.com')) {
-            result = await downloadTikTokDirect(url);
+            result = await downloadTikTokAdvanced(url);
         } else if (url.includes('instagram.com')) {
-            result = await downloadInstagramDirect(url);
+            result = await downloadInstagramAdvanced(url);
         } else {
             return res.json({ success: false, error: 'URL non supportée' });
         }
@@ -42,12 +57,13 @@ app.post('/api/download', async (req, res) => {
                 videoUrl: result.videoUrl,
                 downloadUrl: result.downloadUrl,
                 title: result.title,
-                message: 'Vidéo prête au téléchargement!'
+                message: 'Vidéo trouvée avec succès!'
             });
         } else {
             res.json({ 
                 success: false, 
-                error: result.error 
+                error: result.error,
+                alternative: result.alternative
             });
         }
 
@@ -55,153 +71,281 @@ app.post('/api/download', async (req, res) => {
         console.error('❌ Erreur serveur:', error.message);
         res.json({ 
             success: false, 
-            error: 'Erreur de traitement' 
+            error: 'Erreur de traitement: ' + error.message
         });
     }
 });
 
-// TikTok - Approche directe
-async function downloadTikTokDirect(url) {
+// TikTok - Approche avancée avec multiple services
+async function downloadTikTokAdvanced(url) {
+    console.log('🎵 Début extraction TikTok...');
+    
+    // Méthode 1: Service TikWM (très fiable)
     try {
-        console.log('🎵 Récupération TikTok directe...');
-        
-        // Méthode 1: Extraction depuis la page
-        const response = await axios.get(url, {
+        console.log('🔄 Méthode 1: TikWM...');
+        const response = await axios.get(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`, {
             timeout: 15000,
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'DNT': '1',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1',
-                'Sec-Fetch-Dest': 'document',
-                'Sec-Fetch-Mode': 'navigate',
-                'Sec-Fetch-Site': 'none',
-                'Cache-Control': 'max-age=0'
+                ...REALISTIC_HEADERS,
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Referer': 'https://www.tikwm.com/',
+                'Origin': 'https://www.tikwm.com'
             }
         });
 
-        const html = response.data;
-        
-        // Chercher l'URL vidéo dans le HTML
-        const videoRegex = /"playAddr":"([^"]+)"/g;
-        const matches = [...html.matchAll(videoRegex)];
-        
-        if (matches.length > 0) {
-            let videoUrl = matches[0][1];
-            // Nettoyer l'URL
-            videoUrl = videoUrl.replace(/\\u0026/g, '&');
-            videoUrl = videoUrl.replace(/\\\//g, '/');
-            
-            console.log('✅ URL vidéo TikTok trouvée:', videoUrl);
-            
+        if (response.data && response.data.data && response.data.data.play) {
+            let videoUrl = response.data.data.play;
+            if (videoUrl && !videoUrl.startsWith('http')) {
+                videoUrl = 'https://www.tikwm.com' + videoUrl;
+            }
+            console.log('✅ TikTok méthode 1 réussie');
             return {
                 success: true,
                 videoUrl: videoUrl,
                 downloadUrl: videoUrl,
-                title: 'TikTok Video'
+                title: response.data.data.title || 'TikTok Video'
             };
         }
-
-        // Méthode alternative
-        const videoRegex2 = /"downloadAddr":"([^"]+)"/g;
-        const matches2 = [...html.matchAll(videoRegex2)];
-        
-        if (matches2.length > 0) {
-            let videoUrl = matches2[0][1];
-            videoUrl = videoUrl.replace(/\\u0026/g, '&');
-            videoUrl = videoUrl.replace(/\\\//g, '/');
-            
-            console.log('✅ URL download TikTok trouvée:', videoUrl);
-            
-            return {
-                success: true,
-                videoUrl: videoUrl,
-                downloadUrl: videoUrl,
-                title: 'TikTok Video'
-            };
-        }
-
-        return { success: false, error: 'Aucune vidéo trouvée dans la page' };
-
     } catch (error) {
-        console.log('❌ TikTok direct échoué:', error.message);
-        return { success: false, error: 'Accès refusé par TikTok' };
+        console.log('❌ TikTok méthode 1 échouée:', error.message);
     }
-}
 
-// Instagram - Approche directe
-async function downloadInstagramDirect(url) {
+    // Méthode 2: Service SSSTik
     try {
-        console.log('📸 Récupération Instagram directe...');
+        console.log('🔄 Méthode 2: SSSTik...');
+        const response = await axios.post('https://ssstik.io/abc', 
+            `id=${encodeURIComponent(url)}&locale=fr&tt=0`,
+            {
+                timeout: 15000,
+                headers: {
+                    ...REALISTIC_HEADERS,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Origin': 'https://ssstik.io',
+                    'Referer': 'https://ssstik.io/fr',
+                    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1'
+                }
+            }
+        );
+
+        if (response.data && response.data.url) {
+            console.log('✅ TikTok méthode 2 réussie');
+            return {
+                success: true,
+                videoUrl: response.data.url,
+                downloadUrl: response.data.url,
+                title: 'TikTok Video'
+            };
+        }
+    } catch (error) {
+        console.log('❌ TikTok méthode 2 échouée:', error.message);
+    }
+
+    // Méthode 3: Service TikDown
+    try {
+        console.log('🔄 Méthode 3: TikDown...');
+        const formData = new URLSearchParams();
+        formData.append('url', url);
         
-        const response = await axios.get(url, {
+        const response = await axios.post('https://tikdown.org/api/ajaxSearch', formData, {
             timeout: 15000,
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Linux; Android 10; SM-G981B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.162 Mobile Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'DNT': '1',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1'
+                ...REALISTIC_HEADERS,
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Origin': 'https://tikdown.org',
+                'Referer': 'https://tikdown.org/',
+                'X-Requested-With': 'XMLHttpRequest'
             }
         });
 
-        const html = response.data;
-        
-        // Chercher les URLs vidéo
-        const videoRegex = /"video_url":"([^"]+)"/g;
-        const matches = [...html.matchAll(videoRegex)];
-        
-        if (matches.length > 0) {
-            let videoUrl = matches[0][1];
-            videoUrl = videoUrl.replace(/\\u0026/g, '&');
-            videoUrl = videoUrl.replace(/\\\//g, '/');
-            
-            console.log('✅ URL vidéo Instagram trouvée:', videoUrl);
-            
+        if (response.data && response.data.links && response.data.links[0]) {
+            console.log('✅ TikTok méthode 3 réussie');
             return {
                 success: true,
-                videoUrl: videoUrl,
-                downloadUrl: videoUrl,
-                title: 'Instagram Video'
+                videoUrl: response.data.links[0],
+                downloadUrl: response.data.links[0],
+                title: 'TikTok Video'
             };
         }
-
-        // Pour les posts multiples
-        const videoRegex2 = /"contentUrl":"([^"]+)"/g;
-        const matches2 = [...html.matchAll(videoRegex2)];
-        
-        if (matches2.length > 0) {
-            let videoUrl = matches2[0][1];
-            
-            console.log('✅ URL content Instagram trouvée:', videoUrl);
-            
-            return {
-                success: true,
-                videoUrl: videoUrl,
-                downloadUrl: videoUrl,
-                title: 'Instagram Video'
-            };
-        }
-
-        return { success: false, error: 'Aucune vidéo trouvée - Le post est-il public ?' };
-
     } catch (error) {
-        console.log('❌ Instagram direct échoué:', error.message);
-        return { success: false, error: 'Accès refusé par Instagram' };
+        console.log('❌ TikTok méthode 3 échouée:', error.message);
     }
+
+    return { 
+        success: false, 
+        error: 'Impossible de récupérer la vidéo TikTok',
+        alternative: 'https://snaptik.app'
+    };
 }
 
-// Route de test
-app.get('/api/test', (req, res) => {
+// Instagram - Approche avancée
+async function downloadInstagramAdvanced(url) {
+    console.log('📸 Début extraction Instagram...');
+    
+    // Méthode 1: Service InstaDownloader
+    try {
+        console.log('🔄 Méthode 1: InstaDownloader...');
+        const response = await axios.get(`https://instadownloader.co/api/?url=${encodeURIComponent(url)}`, {
+            timeout: 15000,
+            headers: REALISTIC_HEADERS
+        });
+
+        if (response.data && response.data.video) {
+            console.log('✅ Instagram méthode 1 réussie');
+            return {
+                success: true,
+                videoUrl: response.data.video,
+                downloadUrl: response.data.video,
+                title: 'Instagram Video'
+            };
+        }
+    } catch (error) {
+        console.log('❌ Instagram méthode 1 échouée:', error.message);
+    }
+
+    // Méthode 2: Service Igram
+    try {
+        console.log('🔄 Méthode 2: Igram...');
+        const response = await axios.get(`https://igram.io/api/ig?url=${encodeURIComponent(url)}`, {
+            timeout: 15000,
+            headers: REALISTIC_HEADERS
+        });
+
+        if (response.data && response.data.url) {
+            console.log('✅ Instagram méthode 2 réussie');
+            return {
+                success: true,
+                videoUrl: response.data.url,
+                downloadUrl: response.data.url,
+                title: 'Instagram Video'
+            };
+        }
+    } catch (error) {
+        console.log('❌ Instagram méthode 2 échouée:', error.message);
+    }
+
+    // Méthode 3: Service SaveFrom
+    try {
+        console.log('🔄 Méthode 3: SaveFrom...');
+        const response = await axios.get(`https://api.savefrom.net/api/convert?url=${encodeURIComponent(url)}`, {
+            timeout: 15000,
+            headers: REALISTIC_HEADERS
+        });
+
+        if (response.data && response.data.url) {
+            console.log('✅ Instagram méthode 3 réussie');
+            return {
+                success: true,
+                videoUrl: response.data.url,
+                downloadUrl: response.data.url,
+                title: 'Instagram Video'
+            };
+        }
+    } catch (error) {
+        console.log('❌ Instagram méthode 3 échouée:', error.message);
+    }
+
+    // Méthode 4: Dernier recours - DownloadGram
+    try {
+        console.log('🔄 Méthode 4: DownloadGram...');
+        const response = await axios.post('https://downloadgram.org/wp-json/aio-dl/video-data/', 
+            { url: url },
+            {
+                timeout: 15000,
+                headers: {
+                    ...REALISTIC_HEADERS,
+                    'Content-Type': 'application/json',
+                    'Origin': 'https://downloadgram.org',
+                    'Referer': 'https://downloadgram.org/'
+                }
+            }
+        );
+
+        if (response.data && response.data.media) {
+            console.log('✅ Instagram méthode 4 réussie');
+            return {
+                success: true,
+                videoUrl: response.data.media,
+                downloadUrl: response.data.media,
+                title: 'Instagram Video'
+            };
+        }
+    } catch (error) {
+        console.log('❌ Instagram méthode 4 échouée:', error.message);
+    }
+
+    return { 
+        success: false, 
+        error: 'Impossible de récupérer la vidéo Instagram',
+        alternative: 'https://downloadgram.com'
+    };
+}
+
+// Route de test des services
+app.get('/api/test-services', async (req, res) => {
+    const testUrl = req.query.url;
+    
+    if (!testUrl) {
+        return res.json({ error: 'URL de test requise' });
+    }
+
+    const results = {
+        tiktok: await testTikTokServices(testUrl),
+        instagram: await testInstagramServices(testUrl)
+    };
+
+    res.json(results);
+});
+
+async function testTikTokServices(url) {
+    const services = [
+        { name: 'TikWM', url: `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}` },
+        { name: 'SSSTik', url: 'https://ssstik.io/abc' },
+        { name: 'TikDown', url: 'https://tikdown.org/api/ajaxSearch' }
+    ];
+
+    const results = [];
+    
+    for (const service of services) {
+        try {
+            const response = await axios.get(service.url, { timeout: 10000 });
+            results.push({ service: service.name, status: 'OK', data: response.data });
+        } catch (error) {
+            results.push({ service: service.name, status: 'ERROR', error: error.message });
+        }
+    }
+    
+    return results;
+}
+
+async function testInstagramServices(url) {
+    const services = [
+        { name: 'InstaDownloader', url: `https://instadownloader.co/api/?url=${encodeURIComponent(url)}` },
+        { name: 'Igram', url: `https://igram.io/api/ig?url=${encodeURIComponent(url)}` },
+        { name: 'SaveFrom', url: `https://api.savefrom.net/api/convert?url=${encodeURIComponent(url)}` }
+    ];
+
+    const results = [];
+    
+    for (const service of services) {
+        try {
+            const response = await axios.get(service.url, { timeout: 10000 });
+            results.push({ service: service.name, status: 'OK', data: response.data });
+        } catch (error) {
+            results.push({ service: service.name, status: 'ERROR', error: error.message });
+        }
+    }
+    
+    return results;
+}
+
+// Route de statut
+app.get('/api/status', (req, res) => {
     res.json({ 
-        status: '✅ OK',
-        message: 'APIs directes activées',
-        timestamp: new Date().toISOString()
+        status: 'online',
+        service: 'Instagram/TikTok Downloader Pro',
+        version: '3.0.0',
+        timestamp: new Date().toISOString(),
+        features: ['Multi-service', 'Fallback automatique', 'Anti-bot']
     });
 });
 
@@ -209,8 +353,11 @@ app.get('/api/test', (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-    console.log('🚀 Serveur démarré avec APIs directes!');
+    console.log('🚀 Serveur Pro démarré!');
     console.log(`📍 Port: ${PORT}`);
+    console.log(`🌐 URL: http://localhost:${PORT}`);
+    console.log('🛡️  Protection anti-bot activée');
+    console.log('🔧 Multi-services configurés');
 });
 
 module.exports = app;
