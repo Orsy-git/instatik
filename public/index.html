@@ -418,12 +418,78 @@
             opacity: 0.8;
         }
 
+        .alternative-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            text-align: center;
+        }
+
+        .alternative-links {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .alt-link {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .alt-link:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
         footer {
             margin-top: 3rem;
             text-align: center;
             opacity: 0.8;
             font-size: 0.9rem;
             animation: slideIn 1s ease-out 1.4s both;
+        }
+
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            box-shadow: var(--shadow);
+            max-width: 400px;
+            word-wrap: break-word;
+        }
+
+        .notification.success {
+            background: var(--success);
+        }
+
+        .notification.error {
+            background: var(--accent);
+        }
+
+        .notification.info {
+            background: var(--secondary);
+        }
+
+        .notification.show {
+            transform: translateX(0);
         }
 
         /* Responsive */
@@ -462,35 +528,10 @@
             .option-btn {
                 width: 200px;
             }
-        }
-
-        /* Notification styles */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 1rem 2rem;
-            border-radius: 10px;
-            color: white;
-            font-weight: 600;
-            z-index: 1000;
-            transform: translateX(400px);
-            transition: transform 0.3s ease;
-            box-shadow: var(--shadow);
-            max-width: 400px;
-            word-wrap: break-word;
-        }
-
-        .notification.success {
-            background: var(--success);
-        }
-
-        .notification.error {
-            background: var(--accent);
-        }
-
-        .notification.show {
-            transform: translateX(0);
+            
+            .alternative-links {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -503,7 +544,7 @@
     <div class="container">
         <header>
             <h1>Téléchargeur de Vidéos</h1>
-            <p class="subtitle">Téléchargez vos vidéos préférées depuis Instagram et TikTok sans filigrame</p>
+            <p class="subtitle">Téléchargez vos vidéos préférées depuis Instagram et TikTok sans filigrame avec moi</p>
             
             <div class="platform-icons">
                 <div class="platform">
@@ -565,6 +606,22 @@
                 </div>
             </div>
         </section>
+
+        <section class="alternative-section">
+            <h3>🚨 Solution Alternative</h3>
+            <p>Si le téléchargement ne fonctionne pas, utilisez ces services en ligne :</p>
+            <div class="alternative-links">
+                <a href="https://snaptik.app" target="_blank" class="alt-link">
+                    <span>📹</span> SnapTik - TikTok Downloader
+                </a>
+                <a href="https://downloadgram.com" target="_blank" class="alt-link">
+                    <span>📸</span> DownloadGram - Instagram Downloader
+                </a>
+                <a href="https://ssstik.io" target="_blank" class="alt-link">
+                    <span>🎵</span> SSSTik - TikTok Downloader
+                </a>
+            </div>
+        </section>
     </div>
     
     <footer>
@@ -584,6 +641,8 @@
             const instagramRegex = /https?:\/\/(www\.)?instagram\.com\/(p|reel|reels)\/[^/]+\/?/;
             const tiktokRegex = /https?:\/\/(www\.)?tiktok\.com\/@[^/]+\/video\/\d+/;
             const tiktokVmRegex = /https?:\/\/(vm|vt)\.tiktok\.com\/[^/]+\/?/;
+            
+            let currentVideoUrl = '';
             
             downloadBtn.addEventListener('click', async function() {
                 const url = urlInput.value.trim();
@@ -608,7 +667,7 @@
                 
                 // Désactiver le bouton pendant le traitement
                 downloadBtn.disabled = true;
-                downloadBtn.textContent = 'Téléchargement en cours...';
+                downloadBtn.textContent = 'Récupération...';
                 
                 // Afficher l'animation de chargement
                 loading.style.display = 'block';
@@ -630,13 +689,20 @@
                     downloadBtn.textContent = 'Télécharger la vidéo';
                     
                     if (data.success) {
-                        videoPreview.src = data.downloadUrl;
+                        // Stocker l'URL de la vidéo
+                        currentVideoUrl = data.videoUrl || data.downloadUrl;
+                        
+                        // Afficher la vidéo
+                        videoPreview.src = currentVideoUrl;
                         videoPreview.load();
                         resultSection.style.display = 'block';
-                        showNotification('Vidéo téléchargée avec succès!', 'success');
+                        showNotification('Vidéo trouvée! Cliquez sur télécharger', 'success');
                         
                         // Scroll vers le résultat
                         resultSection.scrollIntoView({ behavior: 'smooth' });
+                        
+                        // Mettre à jour les liens de téléchargement
+                        updateDownloadLinks(currentVideoUrl);
                     } else {
                         showNotification(data.error || 'Erreur lors du téléchargement', 'error');
                     }
@@ -645,32 +711,40 @@
                     downloadBtn.disabled = false;
                     downloadBtn.textContent = 'Télécharger la vidéo';
                     showNotification(
-                        'Erreur de connexion au serveur. Vérifiez que le serveur est démarré sur le port 3000.', 
+                        'Erreur de connexion au serveur. Vérifiez votre connexion internet.', 
                         'error'
                     );
                     console.error('Erreur:', error);
                 }
             });
             
-            // Gérer les boutons de téléchargement
-            downloadOptions.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const format = this.getAttribute('data-format');
-                    const videoUrl = videoPreview.src;
-                    
-                    if (videoUrl && !videoUrl.includes('blob:')) {
-                        const a = document.createElement('a');
-                        a.href = videoUrl;
-                        a.download = `video_${Date.now()}.${format}`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        showNotification(`Téléchargement ${format} démarré!`, 'success');
-                    } else {
-                        showNotification('Aucune vidéo disponible pour le téléchargement', 'error');
-                    }
+            // Fonction pour mettre à jour les liens de téléchargement
+            function updateDownloadLinks(videoUrl) {
+                downloadOptions.forEach(btn => {
+                    btn.onclick = function() {
+                        const format = this.getAttribute('data-format');
+                        
+                        if (format === 'mp4') {
+                            // Téléchargement direct MP4
+                            if (videoUrl) {
+                                const a = document.createElement('a');
+                                a.href = videoUrl;
+                                a.download = `video_${Date.now()}.mp4`;
+                                a.target = '_blank';
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                showNotification('Téléchargement MP4 démarré!', 'success');
+                            } else {
+                                showNotification('Aucune vidéo disponible', 'error');
+                            }
+                        } else if (format === 'mp3') {
+                            // Conversion MP3 (simulée)
+                            showNotification('Conversion MP3 - Fonctionnalité avancée à venir', 'info');
+                        }
+                    };
                 });
-            });
+            }
             
             // Fonction de notification améliorée
             function showNotification(message, type) {
@@ -683,7 +757,12 @@
                 // Créer une nouvelle notification
                 const notification = document.createElement('div');
                 notification.className = `notification ${type}`;
-                notification.textContent = message;
+                
+                // Formater le message avec des sauts de ligne
+                const lines = message.split('\n');
+                notification.innerHTML = lines.map(line => 
+                    `<div>${line}</div>`
+                ).join('');
                 
                 document.body.appendChild(notification);
                 
@@ -706,11 +785,18 @@
             // Focus sur l'input au chargement
             urlInput.focus();
             
-            // Exemple de liens pour tester
+            // Permettre le téléchargement avec la touche Entrée
+            urlInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    downloadBtn.click();
+                }
+            });
+            
+            // Initialiser les liens de téléchargement
+            updateDownloadLinks('');
+            
             console.log('🚀 Téléchargeur de vidéos prêt!');
-            console.log('📝 Exemples de liens valides:');
-            console.log('   Instagram: https://instagram.com/p/Cyour_video_id/');
-            console.log('   TikTok: https://www.tiktok.com/@username/video/123456789');
+            console.log('💡 Conseil: Utilisez des liens de vidéos publiques récentes');
         });
     </script>
 </body>
