@@ -12,6 +12,7 @@
             --light: #f8f9fa;
             --dark: #212529;
             --success: #28a745;
+            --warning: #ffc107;
             --shadow: 0 10px 30px rgba(0,0,0,0.2);
             --radius: 16px;
             --glow: 0 0 20px rgba(106, 17, 203, 0.4);
@@ -451,6 +452,59 @@
             transform: translateY(-2px);
         }
 
+        .debug-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            text-align: center;
+        }
+
+        .debug-btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            border: none;
+            background: var(--warning);
+            color: var(--dark);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .debug-btn:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+        }
+
+        .debug-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .debug-results {
+            margin-top: 1rem;
+            text-align: left;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            line-height: 1.4;
+        }
+
+        .debug-success {
+            color: #28a745;
+        }
+
+        .debug-error {
+            color: #dc3545;
+        }
+
         footer {
             margin-top: 3rem;
             text-align: center;
@@ -488,8 +542,24 @@
             background: var(--secondary);
         }
 
+        .notification.warning {
+            background: var(--warning);
+            color: var(--dark);
+        }
+
         .notification.show {
             transform: translateX(0);
+        }
+
+        .notification-link {
+            color: white;
+            text-decoration: underline;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+
+        .notification-link.dark {
+            color: var(--dark);
         }
 
         /* Responsive */
@@ -532,6 +602,12 @@
             .alternative-links {
                 flex-direction: column;
             }
+            
+            .notification {
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
         }
     </style>
 </head>
@@ -544,7 +620,7 @@
     <div class="container">
         <header>
             <h1>Téléchargeur de Vidéos</h1>
-            <p class="subtitle">Téléchargez vos vidéos préférées depuis Instagram et TikTok sans filigrame avec moi</p>
+            <p class="subtitle">Téléchargez vos vidéos préférées depuis Instagram et TikTok sans filigrame</p>
             
             <div class="platform-icons">
                 <div class="platform">
@@ -622,6 +698,13 @@
                 </a>
             </div>
         </section>
+
+        <section class="debug-section">
+            <h3>🔧 Mode Debug</h3>
+            <p>Si le téléchargement échoue, testez les services :</p>
+            <button id="debugBtn" class="debug-btn">Tester les Services</button>
+            <div id="debugResults" class="debug-results"></div>
+        </section>
     </div>
     
     <footer>
@@ -636,6 +719,8 @@
             const resultSection = document.querySelector('.result-section');
             const videoPreview = document.querySelector('.video-preview');
             const downloadOptions = document.querySelectorAll('.option-btn');
+            const debugBtn = document.getElementById('debugBtn');
+            const debugResults = document.getElementById('debugResults');
             
             // Expressions régulières pour valider les URLs
             const instagramRegex = /https?:\/\/(www\.)?instagram\.com\/(p|reel|reels)\/[^/]+\/?/;
@@ -704,7 +789,11 @@
                         // Mettre à jour les liens de téléchargement
                         updateDownloadLinks(currentVideoUrl);
                     } else {
-                        showNotification(data.error || 'Erreur lors du téléchargement', 'error');
+                        showNotification(
+                            data.error || 'Erreur lors du téléchargement', 
+                            'error', 
+                            data.alternative
+                        );
                     }
                 } catch (error) {
                     loading.style.display = 'none';
@@ -746,12 +835,68 @@
                 });
             }
             
+            // Mode Debug - Test des services
+            debugBtn.addEventListener('click', async function() {
+                const url = urlInput.value.trim();
+                
+                if (!url) {
+                    showNotification('Collez d\'abord un lien valide', 'error');
+                    return;
+                }
+                
+                debugBtn.disabled = true;
+                debugBtn.textContent = 'Test en cours...';
+                debugResults.style.display = 'block';
+                debugResults.innerHTML = '🧪 Test des services en cours...\n\n';
+                
+                try {
+                    const response = await fetch(`/api/test-services?url=${encodeURIComponent(url)}`);
+                    const data = await response.json();
+                    
+                    debugResults.innerHTML = '📊 RÉSULTATS DES TESTS:\n\n';
+                    
+                    if (data.tiktok && data.tiktok.length > 0) {
+                        debugResults.innerHTML += '🎵 TIKTOK SERVICES:\n';
+                        data.tiktok.forEach(service => {
+                            const statusClass = service.status === 'OK' ? 'debug-success' : 'debug-error';
+                            debugResults.innerHTML += `<span class="${statusClass}">• ${service.service}: ${service.status}</span>\n`;
+                            if (service.error) {
+                                debugResults.innerHTML += `  <span class="debug-error">  ↳ ${service.error}</span>\n`;
+                            }
+                        });
+                    }
+                    
+                    if (data.instagram && data.instagram.length > 0) {
+                        debugResults.innerHTML += '\n📸 INSTAGRAM SERVICES:\n';
+                        data.instagram.forEach(service => {
+                            const statusClass = service.status === 'OK' ? 'debug-success' : 'debug-error';
+                            debugResults.innerHTML += `<span class="${statusClass}">• ${service.service}: ${service.status}</span>\n`;
+                            if (service.error) {
+                                debugResults.innerHTML += `  <span class="debug-error">  ↳ ${service.error}</span>\n`;
+                            }
+                        });
+                    }
+                    
+                    if (!data.tiktok && !data.instagram) {
+                        debugResults.innerHTML += '❌ Aucun service disponible pour tester\n';
+                    }
+                    
+                } catch (error) {
+                    debugResults.innerHTML = '❌ Erreur lors du test des services: ' + error.message;
+                }
+                
+                debugBtn.disabled = false;
+                debugBtn.textContent = 'Tester les Services';
+            });
+            
             // Fonction de notification améliorée
-            function showNotification(message, type) {
+            function showNotification(message, type, alternative = null) {
                 // Supprimer les notifications existantes
                 const existingNotifications = document.querySelectorAll('.notification');
                 existingNotifications.forEach(notif => {
-                    document.body.removeChild(notif);
+                    if (document.body.contains(notif)) {
+                        document.body.removeChild(notif);
+                    }
                 });
                 
                 // Créer une nouvelle notification
@@ -763,6 +908,16 @@
                 notification.innerHTML = lines.map(line => 
                     `<div>${line}</div>`
                 ).join('');
+                
+                // Ajouter un lien alternatif si fourni
+                if (alternative && type === 'error') {
+                    const linkClass = type === 'warning' ? 'notification-link dark' : 'notification-link';
+                    notification.innerHTML += `
+                        <a href="${alternative}" target="_blank" class="${linkClass}">
+                            ➡️ Essayer le service alternatif
+                        </a>
+                    `;
+                }
                 
                 document.body.appendChild(notification);
                 
@@ -797,6 +952,7 @@
             
             console.log('🚀 Téléchargeur de vidéos prêt!');
             console.log('💡 Conseil: Utilisez des liens de vidéos publiques récentes');
+            console.log('🔧 Mode debug disponible en cas de problème');
         });
     </script>
 </body>
