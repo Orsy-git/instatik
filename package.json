@@ -1,7 +1,7 @@
 {
   "name": "instatik",
-  "version": "1.0.0",
-  "description": "Téléchargeur de vidéos Instagram et TikTok",
+  "version": "3.0.0",
+  "description": "Téléchargeur avancé de vidéos Instagram et TikTok",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
