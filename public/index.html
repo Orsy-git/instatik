@@ -316,6 +316,26 @@
             box-shadow: 0 8px 20px rgba(40, 167, 69, 0.6);
         }
 
+        .direct-download-btn {
+            padding: 1.2rem 2.5rem;
+            border-radius: 50px;
+            border: none;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(37, 117, 252, 0.4);
+            transform: translateZ(40px);
+            font-size: 1.1rem;
+            margin-top: 1rem;
+        }
+
+        .direct-download-btn:hover {
+            transform: translateY(-3px) scale(1.05) translateZ(50px);
+            box-shadow: 0 8px 20px rgba(37, 117, 252, 0.6);
+        }
+
         .loading {
             display: none;
             text-align: center;
@@ -644,18 +664,19 @@
             color: var(--dark);
         }
 
-        /* Responsive */
+        /* Mobile optimizations */
         @media (max-width: 768px) {
             .container {
-                padding: 2rem;
+                padding: 1.5rem;
             }
             
             h1 {
-                font-size: 2.2rem;
+                font-size: 2rem;
             }
             
             .platform-icons {
-                gap: 1.5rem;
+                gap: 1rem;
+                flex-direction: column;
             }
             
             .platform-icon {
@@ -675,10 +696,12 @@
             .download-options {
                 flex-direction: column;
                 align-items: center;
+                gap: 1rem;
             }
             
-            .option-btn {
-                width: 200px;
+            .option-btn, .direct-download-btn {
+                width: 100%;
+                max-width: 280px;
             }
             
             .alternative-links {
@@ -689,6 +712,28 @@
                 right: 10px;
                 left: 10px;
                 max-width: none;
+                top: 10px;
+            }
+
+            .video-preview {
+                max-height: 300px;
+            }
+        }
+
+        /* Touch device optimizations */
+        @media (hover: none) {
+            .platform-icon:hover,
+            .download-btn:hover,
+            .option-btn:hover,
+            .direct-download-btn:hover,
+            .alt-link:hover,
+            .debug-btn:hover,
+            .test-instagram-btn:hover {
+                transform: none;
+            }
+            
+            .step:hover {
+                transform: none;
             }
         }
     </style>
@@ -734,6 +779,9 @@
             <div class="download-options">
                 <button class="option-btn" data-format="mp4">Télécharger MP4</button>
                 <button class="option-btn" data-format="mp3">Télécharger MP3</button>
+                <button class="direct-download-btn" id="directDownloadBtn">
+                    📥 Télécharger Directement
+                </button>
             </div>
         </section>
         
@@ -814,6 +862,7 @@
             const resultSection = document.querySelector('.result-section');
             const videoPreview = document.querySelector('.video-preview');
             const downloadOptions = document.querySelectorAll('.option-btn');
+            const directDownloadBtn = document.getElementById('directDownloadBtn');
             const debugBtn = document.getElementById('debugBtn');
             const debugResults = document.getElementById('debugResults');
             const testInstagramBtn = document.getElementById('testInstagramBtn');
@@ -825,6 +874,7 @@
             const tiktokVmRegex = /https?:\/\/(vm|vt)\.tiktok\.com\/[^/]+\/?/;
             
             let currentVideoUrl = '';
+            let currentVideoBlob = null;
             
             downloadBtn.addEventListener('click', async function() {
                 const url = urlInput.value.trim();
@@ -874,6 +924,9 @@
                         // Stocker l'URL de la vidéo
                         currentVideoUrl = data.videoUrl || data.downloadUrl;
                         
+                        // Télécharger la vidéo en arrière-plan pour avoir le blob
+                        await cacheVideoForDownload(currentVideoUrl);
+                        
                         // Afficher la vidéo
                         videoPreview.src = currentVideoUrl;
                         videoPreview.load();
@@ -882,9 +935,6 @@
                         
                         // Scroll vers le résultat
                         resultSection.scrollIntoView({ behavior: 'smooth' });
-                        
-                        // Mettre à jour les liens de téléchargement
-                        updateDownloadLinks(currentVideoUrl);
                     } else {
                         showNotification(
                             data.error || 'Erreur lors du téléchargement', 
@@ -904,33 +954,67 @@
                 }
             });
             
-            // Fonction pour mettre à jour les liens de téléchargement
-            function updateDownloadLinks(videoUrl) {
-                downloadOptions.forEach(btn => {
-                    btn.onclick = function() {
-                        const format = this.getAttribute('data-format');
-                        
-                        if (format === 'mp4') {
-                            // Téléchargement direct MP4
-                            if (videoUrl) {
-                                const a = document.createElement('a');
-                                a.href = videoUrl;
-                                a.download = `video_${Date.now()}.mp4`;
-                                a.target = '_blank';
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                                showNotification('Téléchargement MP4 démarré!', 'success');
-                            } else {
-                                showNotification('Aucune vidéo disponible', 'error');
-                            }
-                        } else if (format === 'mp3') {
-                            // Conversion MP3 (simulée)
-                            showNotification('Conversion MP3 - Fonctionnalité avancée à venir', 'info');
-                        }
-                    };
-                });
+            // Fonction pour mettre en cache la vidéo et obtenir un blob
+            async function cacheVideoForDownload(videoUrl) {
+                try {
+                    showNotification('Préparation du téléchargement...', 'info');
+                    const response = await fetch(videoUrl);
+                    const blob = await response.blob();
+                    currentVideoBlob = blob;
+                    console.log('✅ Vidéo mise en cache pour téléchargement direct');
+                } catch (error) {
+                    console.warn('❌ Impossible de mettre en cache la vidéo:', error);
+                    currentVideoBlob = null;
+                }
             }
+            
+            // Téléchargement direct avec blob (fonctionne sur mobile)
+            directDownloadBtn.addEventListener('click', function() {
+                if (currentVideoBlob) {
+                    // Méthode avec blob (fonctionne partout)
+                    const url = URL.createObjectURL(currentVideoBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `video_${Date.now()}.mp4`;
+                    
+                    // Déclencher le téléchargement
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    // Nettoyer l'URL
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    
+                    showNotification('Téléchargement démarré!', 'success');
+                } else if (currentVideoUrl) {
+                    // Fallback: méthode classique
+                    const a = document.createElement('a');
+                    a.href = currentVideoUrl;
+                    a.download = `video_${Date.now()}.mp4`;
+                    
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    showNotification('Téléchargement démarré!', 'success');
+                } else {
+                    showNotification('Aucune vidéo disponible', 'error');
+                }
+            });
+            
+            // Anciens boutons MP4/MP3 (conservés pour compatibilité)
+            downloadOptions.forEach(btn => {
+                btn.onclick = function() {
+                    const format = this.getAttribute('data-format');
+                    
+                    if (format === 'mp4') {
+                        // Utiliser le même système que le bouton direct
+                        directDownloadBtn.click();
+                    } else if (format === 'mp3') {
+                        showNotification('Conversion MP3 - Fonctionnalité avancée à venir', 'info');
+                    }
+                };
+            });
             
             // Test spécifique Instagram
             testInstagramBtn.addEventListener('click', async function() {
@@ -1103,12 +1187,8 @@
                 }
             });
             
-            // Initialiser les liens de téléchargement
-            updateDownloadLinks('');
-            
             console.log('🚀 Téléchargeur de vidéos prêt!');
-            console.log('💡 Conseil: Utilisez des liens de vidéos publiques récentes');
-            console.log('🔧 Modes debug disponibles pour diagnostiquer les problèmes');
+            console.log('📱 Optimisé pour mobile avec téléchargement direct');
         });
     </script>
 </body>
