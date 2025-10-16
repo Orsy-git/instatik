@@ -13,6 +13,7 @@
             --dark: #212529;
             --success: #28a745;
             --warning: #ffc107;
+            --info: #17a2b8;
             --shadow: 0 10px 30px rgba(0,0,0,0.2);
             --radius: 16px;
             --glow: 0 0 20px rgba(106, 17, 203, 0.4);
@@ -419,12 +420,88 @@
             opacity: 0.8;
         }
 
+        .instagram-help {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 193, 7, 0.1);
+            border-radius: var(--radius);
+            text-align: center;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            transform-style: preserve-3d;
+            animation: slideIn 1s ease-out 1.3s both;
+        }
+
+        .help-tips {
+            text-align: left;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            transform: translateZ(20px);
+        }
+
+        .tip {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            border-left: 3px solid var(--warning);
+        }
+
+        .test-instagram-btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            border: none;
+            background: var(--warning);
+            color: var(--dark);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+            transform: translateZ(30px);
+        }
+
+        .test-instagram-btn:hover {
+            background: #e0a800;
+            transform: translateY(-2px) translateZ(40px);
+        }
+
+        .test-instagram-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: translateZ(30px);
+        }
+
+        .instagram-results {
+            margin-top: 1rem;
+            text-align: left;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            line-height: 1.4;
+            transform: translateZ(20px);
+        }
+
+        .service-working {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .service-failed {
+            color: #dc3545;
+        }
+
         .alternative-section {
             margin-top: 2rem;
             padding: 1.5rem;
             background: rgba(255, 255, 255, 0.1);
             border-radius: var(--radius);
             text-align: center;
+            transform-style: preserve-3d;
+            animation: slideIn 1s ease-out 1.4s both;
         }
 
         .alternative-links {
@@ -445,11 +522,12 @@
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
+            transform: translateZ(20px);
         }
 
         .alt-link:hover {
             background: rgba(255, 255, 255, 0.25);
-            transform: translateY(-2px);
+            transform: translateY(-2px) translateZ(30px);
         }
 
         .debug-section {
@@ -458,29 +536,32 @@
             background: rgba(255, 255, 255, 0.1);
             border-radius: var(--radius);
             text-align: center;
+            transform-style: preserve-3d;
+            animation: slideIn 1s ease-out 1.5s both;
         }
 
         .debug-btn {
             padding: 0.8rem 1.5rem;
             border-radius: 50px;
             border: none;
-            background: var(--warning);
-            color: var(--dark);
+            background: var(--info);
+            color: white;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             margin-top: 1rem;
+            transform: translateZ(30px);
         }
 
         .debug-btn:hover {
-            background: #e0a800;
-            transform: translateY(-2px);
+            background: #138496;
+            transform: translateY(-2px) translateZ(40px);
         }
 
         .debug-btn:disabled {
             opacity: 0.7;
             cursor: not-allowed;
-            transform: none;
+            transform: translateZ(30px);
         }
 
         .debug-results {
@@ -495,6 +576,7 @@
             overflow-y: auto;
             display: none;
             line-height: 1.4;
+            transform: translateZ(20px);
         }
 
         .debug-success {
@@ -510,7 +592,7 @@
             text-align: center;
             opacity: 0.8;
             font-size: 0.9rem;
-            animation: slideIn 1s ease-out 1.4s both;
+            animation: slideIn 1s ease-out 1.6s both;
         }
 
         /* Notification styles */
@@ -539,7 +621,7 @@
         }
 
         .notification.info {
-            background: var(--secondary);
+            background: var(--info);
         }
 
         .notification.warning {
@@ -683,6 +765,19 @@
             </div>
         </section>
 
+        <section class="instagram-help">
+            <h3>📸 Aide Spéciale Instagram</h3>
+            <p>Les vidéos Instagram sont plus difficiles à télécharger. Suivez ces conseils :</p>
+            <div class="help-tips">
+                <div class="tip">✅ Utilisez des liens de <strong>Reels</strong> ou <strong>Posts publics</strong></div>
+                <div class="tip">❌ Évitez les <strong>Stories</strong> et contenus <strong>privés</strong></div>
+                <div class="tip">🔄 Essayez plusieurs fois, les services peuvent être saturés</div>
+                <div class="tip">🌐 Utilisez le mode debug pour tester tous les services</div>
+            </div>
+            <button id="testInstagramBtn" class="test-instagram-btn">🧪 Tester Services Instagram</button>
+            <div id="instagramResults" class="instagram-results"></div>
+        </section>
+
         <section class="alternative-section">
             <h3>🚨 Solution Alternative</h3>
             <p>Si le téléchargement ne fonctionne pas, utilisez ces services en ligne :</p>
@@ -702,7 +797,7 @@
         <section class="debug-section">
             <h3>🔧 Mode Debug</h3>
             <p>Si le téléchargement échoue, testez les services :</p>
-            <button id="debugBtn" class="debug-btn">Tester les Services</button>
+            <button id="debugBtn" class="debug-btn">Tester tous les Services</button>
             <div id="debugResults" class="debug-results"></div>
         </section>
     </div>
@@ -721,6 +816,8 @@
             const downloadOptions = document.querySelectorAll('.option-btn');
             const debugBtn = document.getElementById('debugBtn');
             const debugResults = document.getElementById('debugResults');
+            const testInstagramBtn = document.getElementById('testInstagramBtn');
+            const instagramResults = document.getElementById('instagramResults');
             
             // Expressions régulières pour valider les URLs
             const instagramRegex = /https?:\/\/(www\.)?instagram\.com\/(p|reel|reels)\/[^/]+\/?/;
@@ -835,7 +932,66 @@
                 });
             }
             
-            // Mode Debug - Test des services
+            // Test spécifique Instagram
+            testInstagramBtn.addEventListener('click', async function() {
+                const url = urlInput.value.trim();
+                
+                if (!url || !url.includes('instagram.com')) {
+                    showNotification('Collez d\'abord un lien Instagram valide', 'error');
+                    return;
+                }
+                
+                testInstagramBtn.disabled = true;
+                testInstagramBtn.textContent = 'Test Instagram en cours...';
+                instagramResults.style.display = 'block';
+                instagramResults.innerHTML = '🧪 Test des services Instagram en cours...\n\n';
+                
+                try {
+                    const response = await fetch(`/api/test-instagram?url=${encodeURIComponent(url)}`);
+                    const data = await response.json();
+                    
+                    instagramResults.innerHTML = '📊 RÉSULTATS SERVICES INSTAGRAM:\n\n';
+                    
+                    if (data.services && data.services.length > 0) {
+                        let workingCount = 0;
+                        
+                        data.services.forEach(service => {
+                            const statusClass = service.working ? 'service-working' : 'service-failed';
+                            const statusIcon = service.working ? '✅' : '❌';
+                            const workingText = service.working ? 'FONCTIONNE' : 'ÉCHEC';
+                            
+                            instagramResults.innerHTML += `<span class="${statusClass}">${statusIcon} ${service.service}: ${workingText}</span>\n`;
+                            
+                            if (service.working) {
+                                workingCount++;
+                            }
+                            
+                            if (service.error) {
+                                instagramResults.innerHTML += `  <span class="service-failed">  ↳ ${service.error}</span>\n`;
+                            }
+                        });
+                        
+                        instagramResults.innerHTML += `\n📈 ${workingCount}/${data.services.length} services fonctionnent`;
+                        
+                        if (workingCount > 0) {
+                            showNotification(`${workingCount} services Instagram fonctionnent! Réessayez le téléchargement.`, 'success');
+                        } else {
+                            showNotification('Aucun service Instagram ne fonctionne actuellement', 'error', 'https://downloadgram.com');
+                        }
+                    } else {
+                        instagramResults.innerHTML += '❌ Aucun service disponible pour tester\n';
+                    }
+                    
+                } catch (error) {
+                    instagramResults.innerHTML = '❌ Erreur lors du test Instagram: ' + error.message;
+                    showNotification('Erreur de test Instagram', 'error');
+                }
+                
+                testInstagramBtn.disabled = false;
+                testInstagramBtn.textContent = '🧪 Tester Services Instagram';
+            });
+            
+            // Mode Debug général
             debugBtn.addEventListener('click', async function() {
                 const url = urlInput.value.trim();
                 
@@ -847,13 +1003,13 @@
                 debugBtn.disabled = true;
                 debugBtn.textContent = 'Test en cours...';
                 debugResults.style.display = 'block';
-                debugResults.innerHTML = '🧪 Test des services en cours...\n\n';
+                debugResults.innerHTML = '🧪 Test de tous les services en cours...\n\n';
                 
                 try {
                     const response = await fetch(`/api/test-services?url=${encodeURIComponent(url)}`);
                     const data = await response.json();
                     
-                    debugResults.innerHTML = '📊 RÉSULTATS DES TESTS:\n\n';
+                    debugResults.innerHTML = '📊 RÉSULTATS COMPLETS:\n\n';
                     
                     if (data.tiktok && data.tiktok.length > 0) {
                         debugResults.innerHTML += '🎵 TIKTOK SERVICES:\n';
@@ -886,7 +1042,7 @@
                 }
                 
                 debugBtn.disabled = false;
-                debugBtn.textContent = 'Tester les Services';
+                debugBtn.textContent = 'Tester tous les Services';
             });
             
             // Fonction de notification améliorée
@@ -952,7 +1108,7 @@
             
             console.log('🚀 Téléchargeur de vidéos prêt!');
             console.log('💡 Conseil: Utilisez des liens de vidéos publiques récentes');
-            console.log('🔧 Mode debug disponible en cas de problème');
+            console.log('🔧 Modes debug disponibles pour diagnostiquer les problèmes');
         });
     </script>
 </body>
