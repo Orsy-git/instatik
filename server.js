@@ -1,6 +1,5 @@
 const express = require('express');
 const axios = require('axios');
-const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
 
@@ -9,98 +8,131 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
 
-// Route principale
+// Servir les fichiers statiques du dossier public
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Route pour la page d'accueil
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// API pour TikTok (service le plus fiable)
+// API de téléchargement
 app.post('/api/download', async (req, res) => {
     try {
         const { url } = req.body;
         
         if (!url) {
-            return res.json({ error: 'URL est requise' });
+            return res.json({ success: false, error: 'URL est requise' });
         }
 
         console.log('🔗 URL reçue:', url);
 
-        let videoUrl;
+        let videoData;
 
         if (url.includes('tiktok.com')) {
-            videoUrl = await getTikTokVideo(url);
+            videoData = await getTikTokVideo(url);
         } else if (url.includes('instagram.com')) {
-            videoUrl = await getInstagramVideo(url);
+            videoData = await getInstagramVideo(url);
         } else {
-            return res.json({ error: 'Seuls les liens TikTok et Instagram sont supportés' });
+            return res.json({ success: false, error: 'Seuls TikTok et Instagram sont supportés' });
         }
 
-        if (videoUrl) {
+        if (videoData && videoData.url) {
             res.json({
                 success: true,
-                videoUrl: videoUrl,
+                videoUrl: videoData.url,
+                title: videoData.title || 'Video',
                 message: 'Vidéo trouvée avec succès!'
             });
         } else {
-            res.json({ error: 'Impossible de récupérer la vidéo. Essayez un autre lien.' });
+            res.json({ 
+                success: false, 
+                error: 'Vidéo non trouvée. Le lien peut être privé ou invalide.' 
+            });
         }
 
     } catch (error) {
-        console.error('❌ Erreur:', error.message);
-        res.json({ error: 'Erreur serveur: ' + error.message });
+        console.error('❌ Erreur serveur:', error.message);
+        res.json({ 
+            success: false, 
+            error: 'Erreur temporaire du serveur' 
+        });
     }
 });
 
-// Service TikTok - TikWM (très fiable)
+// Service TikTok - Version optimisée
 async function getTikTokVideo(url) {
-    try {
-        console.log('🎵 Récupération TikTok...');
-        const response = await axios.get(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`, {
-            timeout: 15000,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Accept': 'application/json',
-                'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
-                'Referer': 'https://www.tikwm.com/'
-            }
-        });
-
-        console.log('📊 Réponse TikTok:', response.data);
-
-        if (response.data && response.data.data) {
-            const videoUrl = response.data.data.play;
-            if (videoUrl && !videoUrl.startsWith('http')) {
-                return 'https://www.tikwm.com' + videoUrl;
-            }
-            return videoUrl;
-        }
-    } catch (error) {
-        console.log('❌ TikTok service 1 échoué:', error.message);
-    }
-
-    // Fallback: SSSTik
-    try {
-        console.log('🔄 Essai service TikTok alternatif...');
-        const response = await axios.post('https://ssstik.io/abc?url=dl', 
-            `id=${encodeURIComponent(url)}&locale=fr&tt=0`,
-            {
-                timeout: 15000,
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                    'Origin': 'https://ssstik.io',
-                    'Referer': 'https://ssstik.io/fr'
+    const services = [
+        {
+            name: 'TikWM',
+            url: `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`,
+            method: 'GET',
+            transform: (data) => {
+                if (data.data && data.data.play) {
+                    let videoUrl = data.data.play;
+                    if (videoUrl && !videoUrl.startsWith('http')) {
+                        videoUrl = 'https://www.tikwm.com' + videoUrl;
+                    }
+                    return {
+                        url: videoUrl,
+                        title: data.data.title
+                    };
                 }
+                return null;
             }
-        );
-
-        if (response.data && response.data.url) {
-            return response.data.url;
+        },
+        {
+            name: 'TikDown',
+            url: 'https://tikdown.org/api/ajaxSearch',
+            method: 'POST',
+            data: `url=${encodeURIComponent(url)}`,
+            transform: (data) => {
+                if (data.links && data.links[0]) {
+                    return { url: data.links[0], title: 'TikTok Video' };
+                }
+                return null;
+            }
         }
-    } catch (error) {
-        console.log('❌ TikTok service 2 échoué:', error.message);
+    ];
+
+    for (const service of services) {
+        try {
+            console.log(`🔄 Essai service: ${service.name}`);
+            
+            const config = {
+                timeout: 10000,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'Accept': 'application/json',
+                    'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7'
+                }
+            };
+
+            let response;
+            if (service.method === 'POST') {
+                response = await axios.post(service.url, service.data, {
+                    ...config,
+                    headers: {
+                        ...config.headers,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Origin': 'https://tikdown.org',
+                        'Referer': 'https://tikdown.org/'
+                    }
+                });
+            } else {
+                response = await axios.get(service.url, config);
+            }
+
+            const result = service.transform(response.data);
+            if (result) {
+                console.log(`✅ Succès avec ${service.name}`);
+                return result;
+            }
+        } catch (error) {
+            console.log(`❌ ${service.name} échoué:`, error.message);
+            continue;
+        }
     }
 
     return null;
@@ -108,77 +140,87 @@ async function getTikTokVideo(url) {
 
 // Service Instagram
 async function getInstagramVideo(url) {
-    try {
-        console.log('📸 Récupération Instagram...');
-        const response = await axios.get(`https://igram.io/api/ig?url=${encodeURIComponent(url)}`, {
-            timeout: 15000,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept': 'application/json'
+    const services = [
+        {
+            name: 'Igram',
+            url: `https://igram.io/api/ig?url=${encodeURIComponent(url)}`,
+            transform: (data) => {
+                if (data.url) return { url: data.url, title: 'Instagram Video' };
+                return null;
             }
-        });
-
-        console.log('📊 Réponse Instagram:', response.data);
-
-        if (response.data && response.data.url) {
-            return response.data.url;
-        }
-    } catch (error) {
-        console.log('❌ Instagram service 1 échoué:', error.message);
-    }
-
-    // Fallback: InstaDownloader
-    try {
-        const response = await axios.get(`https://instadownloader.co/api/?url=${encodeURIComponent(url)}`, {
-            timeout: 15000,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        },
+        {
+            name: 'InstaDownloader',
+            url: `https://instadownloader.co/api/?url=${encodeURIComponent(url)}`,
+            transform: (data) => {
+                if (data.video) return { url: data.video, title: 'Instagram Video' };
+                return null;
             }
-        });
-
-        if (response.data && response.data.video) {
-            return response.data.video;
         }
-    } catch (error) {
-        console.log('❌ Instagram service 2 échoué:', error.message);
+    ];
+
+    for (const service of services) {
+        try {
+            console.log(`📸 Essai service Instagram: ${service.name}`);
+            
+            const response = await axios.get(service.url, {
+                timeout: 10000,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            });
+
+            const result = service.transform(response.data);
+            if (result) {
+                console.log(`✅ Instagram succès avec ${service.name}`);
+                return result;
+            }
+        } catch (error) {
+            console.log(`❌ Instagram ${service.name} échoué:`, error.message);
+            continue;
+        }
     }
 
     return null;
 }
 
-// Route de test
-app.get('/api/test', (req, res) => {
+// Routes API supplémentaires
+app.get('/api/status', (req, res) => {
     res.json({ 
-        status: '✅ OK',
-        message: 'Serveur fonctionnel avec Node.js 22',
+        status: 'online',
+        service: 'Instagram/TikTok Downloader',
+        version: '2.0.0',
         timestamp: new Date().toISOString(),
         nodeVersion: process.version
     });
 });
 
-// Route pour la santé de l'application
-app.get('/api/health', (req, res) => {
-    res.json({ 
-        status: 'healthy',
-        service: 'Instagram/TikTok Downloader',
-        version: '2.0.0'
+app.get('/api/services', (req, res) => {
+    res.json({
+        tiktok: ['TikWM', 'TikDown'],
+        instagram: ['Igram', 'InstaDownloader'],
+        status: 'operational'
     });
 });
 
-// Gestion des routes non trouvées
+// Gestion des erreurs 404
 app.use('*', (req, res) => {
-    res.status(404).json({ error: 'Route non trouvée' });
+    if (req.originalUrl.startsWith('/api/')) {
+        res.status(404).json({ error: 'API endpoint non trouvé' });
+    } else {
+        res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    }
 });
 
-// Port
+// Démarrage du serveur
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-    console.log('🚀 Serveur démarré avec succès!');
-    console.log(`📡 Port: ${PORT}`);
+    console.log('🚀 Serveur démarré!');
+    console.log(`📍 Port: ${PORT}`);
     console.log(`🌐 URL: http://localhost:${PORT}`);
     console.log(`⚡ Node.js: ${process.version}`);
-    console.log(`🔧 Environnement: ${process.env.NODE_ENV || 'development'}`);
+    console.log('✅ Prêt pour le déploiement Vercel');
 });
 
 module.exports = app;
