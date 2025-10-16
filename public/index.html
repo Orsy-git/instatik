@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Téléchargeur de Vidéos - Instagram & TikTok</title>
+    
+    <!-- Google Ads -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7204440079700980"
+            crossorigin="anonymous"></script>
+    
     <style>
         :root {
             --primary: #6a11cb;
@@ -298,24 +303,6 @@
             transform-style: preserve-3d;
         }
 
-        .option-btn {
-            padding: 1rem 2rem;
-            border-radius: 50px;
-            border: none;
-            background: var(--success);
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
-            transform: translateZ(40px);
-        }
-
-        .option-btn:hover {
-            transform: translateY(-3px) scale(1.05) translateZ(50px);
-            box-shadow: 0 8px 20px rgba(40, 167, 69, 0.6);
-        }
-
         .direct-download-btn {
             padding: 1.2rem 2.5rem;
             border-radius: 50px;
@@ -328,7 +315,6 @@
             box-shadow: 0 5px 15px rgba(37, 117, 252, 0.4);
             transform: translateZ(40px);
             font-size: 1.1rem;
-            margin-top: 1rem;
         }
 
         .direct-download-btn:hover {
@@ -363,6 +349,55 @@
         .loading-text {
             font-size: 1.1rem;
             animation: pulse 2s ease-in-out infinite;
+        }
+
+        /* Publicités Google Ads */
+        .ad-container {
+            margin: 2rem 0;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius);
+            text-align: center;
+            transform-style: preserve-3d;
+        }
+
+        .ad-label {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-bottom: 0.5rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .ad-banner {
+            width: 100%;
+            margin: 0 auto;
+            min-height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .ad-banner.horizontal {
+            max-width: 728px;
+            height: 90px;
+        }
+
+        .ad-banner.vertical {
+            max-width: 300px;
+            height: 250px;
+        }
+
+        .ad-banner.square {
+            max-width: 336px;
+            height: 280px;
+        }
+
+        .ad-banner.mobile {
+            max-width: 320px;
+            height: 100px;
         }
 
         .instructions {
@@ -514,42 +549,6 @@
             color: #dc3545;
         }
 
-        .alternative-section {
-            margin-top: 2rem;
-            padding: 1.5rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius);
-            text-align: center;
-            transform-style: preserve-3d;
-            animation: slideIn 1s ease-out 1.4s both;
-        }
-
-        .alternative-links {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .alt-link {
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            color: white;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            transform: translateZ(20px);
-        }
-
-        .alt-link:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: translateY(-2px) translateZ(30px);
-        }
-
         .debug-section {
             margin-top: 2rem;
             padding: 1.5rem;
@@ -557,7 +556,7 @@
             border-radius: var(--radius);
             text-align: center;
             transform-style: preserve-3d;
-            animation: slideIn 1s ease-out 1.5s both;
+            animation: slideIn 1s ease-out 1.4s both;
         }
 
         .debug-btn {
@@ -612,7 +611,7 @@
             text-align: center;
             opacity: 0.8;
             font-size: 0.9rem;
-            animation: slideIn 1s ease-out 1.6s both;
+            animation: slideIn 1s ease-out 1.5s both;
         }
 
         /* Notification styles */
@@ -653,18 +652,7 @@
             transform: translateX(0);
         }
 
-        .notification-link {
-            color: white;
-            text-decoration: underline;
-            margin-top: 0.5rem;
-            display: inline-block;
-        }
-
-        .notification-link.dark {
-            color: var(--dark);
-        }
-
-        /* Mobile optimizations */
+        /* Responsive */
         @media (max-width: 768px) {
             .container {
                 padding: 1.5rem;
@@ -699,13 +687,14 @@
                 gap: 1rem;
             }
             
-            .option-btn, .direct-download-btn {
+            .direct-download-btn {
                 width: 100%;
                 max-width: 280px;
             }
             
-            .alternative-links {
-                flex-direction: column;
+            .ad-banner.horizontal {
+                max-width: 320px;
+                height: 100px;
             }
             
             .notification {
@@ -724,9 +713,7 @@
         @media (hover: none) {
             .platform-icon:hover,
             .download-btn:hover,
-            .option-btn:hover,
             .direct-download-btn:hover,
-            .alt-link:hover,
             .debug-btn:hover,
             .test-instagram-btn:hover {
                 transform: none;
@@ -747,7 +734,7 @@
     <div class="container">
         <header>
             <h1>Téléchargeur de Vidéos</h1>
-            <p class="subtitle">Téléchargez vos vidéos préférées depuis Instagram et TikTok sans filigrame</p>
+            <p class="subtitle">Téléchargez vos vidéos préférées depuis Instagram et TikTok</p>
             
             <div class="platform-icons">
                 <div class="platform">
@@ -760,11 +747,43 @@
                 </div>
             </div>
         </header>
+
+        <!-- Bannière publicitaire horizontale -->
+        <div class="ad-container">
+            <div class="ad-label">Publicité</div>
+            <div class="ad-banner horizontal">
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-7204440079700980"
+                     data-ad-slot="1234567890"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                    (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            </div>
+        </div>
         
         <section class="input-section">
             <input type="text" class="url-input" placeholder="Collez le lien de la vidéo Instagram ou TikTok ici...">
-            <button class="download-btn">Télécharger la vidéo</button>
+            <button class="download-btn" id="downloadBtn">Télécharger la vidéo</button>
         </section>
+
+        <!-- Bannière publicitaire mobile -->
+        <div class="ad-container">
+            <div class="ad-label">Publicité</div>
+            <div class="ad-banner mobile">
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-7204440079700980"
+                     data-ad-slot="0987654321"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                    (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            </div>
+        </div>
         
         <div class="loading">
             <div class="spinner-3d"></div>
@@ -777,13 +796,27 @@
                 Votre navigateur ne supporte pas la lecture de vidéos.
             </video>
             <div class="download-options">
-                <button class="option-btn" data-format="mp4">Télécharger MP4</button>
-                <button class="option-btn" data-format="mp3">Télécharger MP3</button>
                 <button class="direct-download-btn" id="directDownloadBtn">
                     📥 Télécharger Directement
                 </button>
             </div>
         </section>
+
+        <!-- Bannière publicitaire carrée -->
+        <div class="ad-container">
+            <div class="ad-label">Publicité</div>
+            <div class="ad-banner square">
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-7204440079700980"
+                     data-ad-slot="1122334455"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                    (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            </div>
+        </div>
         
         <section class="instructions">
             <h3>Comment utiliser</h3>
@@ -813,6 +846,22 @@
             </div>
         </section>
 
+        <!-- Bannière publicitaire verticale -->
+        <div class="ad-container">
+            <div class="ad-label">Publicité</div>
+            <div class="ad-banner vertical">
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-7204440079700980"
+                     data-ad-slot="5566778899"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                    (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            </div>
+        </div>
+
         <section class="instagram-help">
             <h3>📸 Aide Spéciale Instagram</h3>
             <p>Les vidéos Instagram sont plus difficiles à télécharger. Suivez ces conseils :</p>
@@ -826,28 +875,28 @@
             <div id="instagramResults" class="instagram-results"></div>
         </section>
 
-        <section class="alternative-section">
-            <h3>🚨 Solution Alternative</h3>
-            <p>Si le téléchargement ne fonctionne pas, utilisez ces services en ligne :</p>
-            <div class="alternative-links">
-                <a href="https://snaptik.app" target="_blank" class="alt-link">
-                    <span>📹</span> SnapTik - TikTok Downloader
-                </a>
-                <a href="https://downloadgram.com" target="_blank" class="alt-link">
-                    <span>📸</span> DownloadGram - Instagram Downloader
-                </a>
-                <a href="https://ssstik.io" target="_blank" class="alt-link">
-                    <span>🎵</span> SSSTik - TikTok Downloader
-                </a>
-            </div>
-        </section>
-
         <section class="debug-section">
             <h3>🔧 Mode Debug</h3>
             <p>Si le téléchargement échoue, testez les services :</p>
             <button id="debugBtn" class="debug-btn">Tester tous les Services</button>
             <div id="debugResults" class="debug-results"></div>
         </section>
+
+        <!-- Dernière bannière publicitaire -->
+        <div class="ad-container">
+            <div class="ad-label">Publicité</div>
+            <div class="ad-banner horizontal">
+                <ins class="adsbygoogle"
+                     style="display:block"
+                     data-ad-client="ca-pub-7204440079700980"
+                     data-ad-slot="6677889900"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script>
+                    (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            </div>
+        </div>
     </div>
     
     <footer>
@@ -855,13 +904,16 @@
     </footer>
 
     <script>
+        // Variables globales
+        let currentVideoUrl = '';
+        let currentVideoBlob = null;
+
         document.addEventListener('DOMContentLoaded', function() {
             const urlInput = document.querySelector('.url-input');
-            const downloadBtn = document.querySelector('.download-btn');
+            const downloadBtn = document.getElementById('downloadBtn');
             const loading = document.querySelector('.loading');
             const resultSection = document.querySelector('.result-section');
             const videoPreview = document.querySelector('.video-preview');
-            const downloadOptions = document.querySelectorAll('.option-btn');
             const directDownloadBtn = document.getElementById('directDownloadBtn');
             const debugBtn = document.getElementById('debugBtn');
             const debugResults = document.getElementById('debugResults');
@@ -873,9 +925,7 @@
             const tiktokRegex = /https?:\/\/(www\.)?tiktok\.com\/@[^/]+\/video\/\d+/;
             const tiktokVmRegex = /https?:\/\/(vm|vt)\.tiktok\.com\/[^/]+\/?/;
             
-            let currentVideoUrl = '';
-            let currentVideoBlob = null;
-            
+            // Gestion du téléchargement
             downloadBtn.addEventListener('click', async function() {
                 const url = urlInput.value.trim();
                 
@@ -938,8 +988,7 @@
                     } else {
                         showNotification(
                             data.error || 'Erreur lors du téléchargement', 
-                            'error', 
-                            data.alternative
+                            'error'
                         );
                     }
                 } catch (error) {
@@ -1002,20 +1051,6 @@
                 }
             });
             
-            // Anciens boutons MP4/MP3 (conservés pour compatibilité)
-            downloadOptions.forEach(btn => {
-                btn.onclick = function() {
-                    const format = this.getAttribute('data-format');
-                    
-                    if (format === 'mp4') {
-                        // Utiliser le même système que le bouton direct
-                        directDownloadBtn.click();
-                    } else if (format === 'mp3') {
-                        showNotification('Conversion MP3 - Fonctionnalité avancée à venir', 'info');
-                    }
-                };
-            });
-            
             // Test spécifique Instagram
             testInstagramBtn.addEventListener('click', async function() {
                 const url = urlInput.value.trim();
@@ -1060,7 +1095,7 @@
                         if (workingCount > 0) {
                             showNotification(`${workingCount} services Instagram fonctionnent! Réessayez le téléchargement.`, 'success');
                         } else {
-                            showNotification('Aucun service Instagram ne fonctionne actuellement', 'error', 'https://downloadgram.com');
+                            showNotification('Aucun service Instagram ne fonctionne actuellement', 'error');
                         }
                     } else {
                         instagramResults.innerHTML += '❌ Aucun service disponible pour tester\n';
@@ -1129,54 +1164,6 @@
                 debugBtn.textContent = 'Tester tous les Services';
             });
             
-            // Fonction de notification améliorée
-            function showNotification(message, type, alternative = null) {
-                // Supprimer les notifications existantes
-                const existingNotifications = document.querySelectorAll('.notification');
-                existingNotifications.forEach(notif => {
-                    if (document.body.contains(notif)) {
-                        document.body.removeChild(notif);
-                    }
-                });
-                
-                // Créer une nouvelle notification
-                const notification = document.createElement('div');
-                notification.className = `notification ${type}`;
-                
-                // Formater le message avec des sauts de ligne
-                const lines = message.split('\n');
-                notification.innerHTML = lines.map(line => 
-                    `<div>${line}</div>`
-                ).join('');
-                
-                // Ajouter un lien alternatif si fourni
-                if (alternative && type === 'error') {
-                    const linkClass = type === 'warning' ? 'notification-link dark' : 'notification-link';
-                    notification.innerHTML += `
-                        <a href="${alternative}" target="_blank" class="${linkClass}">
-                            ➡️ Essayer le service alternatif
-                        </a>
-                    `;
-                }
-                
-                document.body.appendChild(notification);
-                
-                // Animation d'entrée
-                setTimeout(() => {
-                    notification.classList.add('show');
-                }, 100);
-                
-                // Supprimer après 5 secondes
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                    setTimeout(() => {
-                        if (document.body.contains(notification)) {
-                            document.body.removeChild(notification);
-                        }
-                    }, 300);
-                }, 5000);
-            }
-            
             // Focus sur l'input au chargement
             urlInput.focus();
             
@@ -1189,7 +1176,46 @@
             
             console.log('🚀 Téléchargeur de vidéos prêt!');
             console.log('📱 Optimisé pour mobile avec téléchargement direct');
+            console.log('💰 Google Ads intégré avec ID: ca-pub-7204440079700980');
         });
+
+        // Fonction de notification améliorée
+        function showNotification(message, type) {
+            // Supprimer les notifications existantes
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notif => {
+                if (document.body.contains(notif)) {
+                    document.body.removeChild(notif);
+                }
+            });
+            
+            // Créer une nouvelle notification
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            // Formater le message avec des sauts de ligne
+            const lines = message.split('\n');
+            notification.innerHTML = lines.map(line => 
+                `<div>${line}</div>`
+            ).join('');
+            
+            document.body.appendChild(notification);
+            
+            // Animation d'entrée
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+            
+            // Supprimer après 5 secondes
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 300);
+            }, 5000);
+        }
     </script>
 </body>
 </html>
